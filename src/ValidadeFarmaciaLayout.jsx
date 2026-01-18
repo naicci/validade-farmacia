@@ -21,9 +21,9 @@ import {
   X,
 } from "lucide-react";
 
-/* ===========================
+/* =========================
    BarcodeDetector helpers
-=========================== */
+========================= */
 const isBarcodeDetectorSupported = () =>
   typeof window !== "undefined" && "BarcodeDetector" in window;
 
@@ -33,15 +33,14 @@ const createBarcodeDetector = () =>
   });
 
 export default function ValidadeFarmaciaLayout() {
-  /* ===========================
+  /* =========================
      Estados
-  =========================== */
+  ========================= */
   const [darkMode, setDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [local, setLocal] = useState("");
   const [filterDays, setFilterDays] = useState("todos");
   const [filterLocal, setFilterLocal] = useState("todos");
-
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState("");
 
@@ -51,9 +50,9 @@ export default function ValidadeFarmaciaLayout() {
   const dateRef = useRef(null);
   const audioRef = useRef(null);
 
-  /* ===========================
+  /* =========================
      Persistência
-  =========================== */
+  ========================= */
   useEffect(() => {
     const stored = localStorage.getItem("produtos-validade");
     if (stored) {
@@ -67,9 +66,9 @@ export default function ValidadeFarmaciaLayout() {
     localStorage.setItem("produtos-validade", JSON.stringify(products));
   }, [products]);
 
-  /* ===========================
+  /* =========================
      Scanner nativo
-  =========================== */
+  ========================= */
   useEffect(() => {
     if (!scannerOpen) return;
 
@@ -120,24 +119,17 @@ export default function ValidadeFarmaciaLayout() {
     };
   }, [scannerOpen]);
 
-  /* ===========================
+  /* =========================
      Ações
-  =========================== */
+  ========================= */
   const saveProduct = () => {
     const nome = nameRef.current.value.trim();
     const validade = dateRef.current.value;
     const codigo = barcodeRef.current.value.trim();
-
     if (!nome || !validade) return;
 
     setProducts((prev) => [
-      {
-        id: Date.now(),
-        nome,
-        validade,
-        codigo,
-        local,
-      },
+      { id: Date.now(), nome, validade, codigo, local },
       ...prev,
     ]);
 
@@ -151,11 +143,10 @@ export default function ValidadeFarmaciaLayout() {
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  /* ===========================
+  /* =========================
      Cálculos
-  =========================== */
+  ========================= */
   const now = new Date();
-
   const diffDays = (d) =>
     Math.ceil((new Date(d) - now) / (1000 * 60 * 60 * 24));
 
@@ -168,46 +159,52 @@ export default function ValidadeFarmaciaLayout() {
   ).length;
   const countOk = products.filter((p) => diffDays(p.validade) > 90).length;
 
-  const filteredProducts = products.filter((p) => {
-    const d = diffDays(p.validade);
-    const daysOk =
-      filterDays === "todos"
-        ? true
-        : filterDays === "7"
-        ? d <= 7
-        : filterDays === "30"
-        ? d > 7 && d <= 30
-        : d > 30 && d <= 90;
+  const filteredProducts = products
+    .filter((p) => {
+      const d = diffDays(p.validade);
+      const daysOk =
+        filterDays === "todos"
+          ? true
+          : filterDays === "7"
+          ? d <= 7
+          : filterDays === "30"
+          ? d > 7 && d <= 30
+          : d > 30 && d <= 90;
 
-    const localOk =
-      filterLocal === "todos" ? true : p.local === filterLocal;
+      const localOk =
+        filterLocal === "todos" ? true : p.local === filterLocal;
 
-    return d >= 0 && daysOk && localOk;
-  });
+      return d >= 0 && daysOk && localOk;
+    })
+    .sort((a, b) => new Date(a.validade) - new Date(b.validade));
 
   const lastFive = products.slice(0, 5);
 
-  /* ===========================
-     Layout helpers
-  =========================== */
+  /* =========================
+     Estilos (restaurados)
+  ========================= */
+  const containerClass = darkMode
+    ? "bg-gray-900 text-gray-100"
+    : "bg-gray-100 text-gray-900";
+
   const cardClass = darkMode
-    ? "bg-gray-800 text-gray-100"
-    : "bg-white text-gray-900";
+    ? "bg-gray-800 border border-gray-700 shadow-lg"
+    : "bg-white border border-gray-200 shadow-lg";
 
   const inputClass = darkMode
-    ? "bg-gray-700 text-gray-100"
-    : "bg-white text-gray-900";
+    ? "bg-gray-700 text-gray-100 border border-gray-600"
+    : "bg-white text-gray-900 border border-gray-300";
 
-  /* ===========================
+  /* =========================
      JSX
-  =========================== */
+  ========================= */
   return (
-    <div className={`min-h-screen p-4 ${darkMode ? "bg-gray-900" : "bg-gray-100"}`}>
+    <div className={`min-h-screen p-4 ${containerClass}`}>
       {/* Scanner */}
       {scannerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-          <div className="bg-white w-full max-w-md rounded-xl">
-            <div className="flex justify-between items-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-xl">
+            <div className="flex justify-between items-center p-4 border-b">
               <span className="font-semibold">Ler código de barras</span>
               <Button variant="ghost" onClick={() => setScannerOpen(false)}>
                 <X />
@@ -216,7 +213,7 @@ export default function ValidadeFarmaciaLayout() {
             <div className="h-[60vh]">
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover bg-black"
                 muted
                 playsInline
                 autoPlay
@@ -236,14 +233,14 @@ export default function ValidadeFarmaciaLayout() {
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Controle de Validades</h1>
+        <h1 className="text-2xl font-bold">Controle de Validades</h1>
         <Button variant="outline" onClick={() => setDarkMode(!darkMode)}>
           {darkMode ? <Sun /> : <Moon />}
         </Button>
       </div>
 
       <Tabs defaultValue="cadastro">
-        <TabsList className="grid grid-cols-2 mb-4 h-12">
+        <TabsList className="grid grid-cols-2 h-12 mb-4">
           <TabsTrigger value="cadastro">Cadastro</TabsTrigger>
           <TabsTrigger value="controle">Controle</TabsTrigger>
         </TabsList>
@@ -251,17 +248,28 @@ export default function ValidadeFarmaciaLayout() {
         {/* ================= CADASTRO ================= */}
         <TabsContent value="cadastro" className="space-y-4">
           <Card className={cardClass}>
-            <CardContent className="space-y-3 p-4">
-              <div className="flex gap-2">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex gap-2 items-center">
                 <Barcode />
-                <Input ref={barcodeRef} placeholder="Código" className={inputClass} />
+                <Input
+                  ref={barcodeRef}
+                  placeholder="Código de barras"
+                  className={inputClass}
+                />
                 <Button onClick={() => setScannerOpen(true)}>
                   <ScanLine />
                 </Button>
               </div>
-              <Input ref={nameRef} placeholder="Nome" className={inputClass} />
-              <Input ref={dateRef} type="date" className={inputClass} />
-
+              <Input
+                ref={nameRef}
+                placeholder="Nome do produto"
+                className={inputClass}
+              />
+              <Input
+                ref={dateRef}
+                type="date"
+                className={inputClass}
+              />
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger className={inputClass}>
                   <SelectValue placeholder="Local" />
@@ -272,7 +280,6 @@ export default function ValidadeFarmaciaLayout() {
                   <SelectItem value="geladeira">Geladeira</SelectItem>
                 </SelectContent>
               </Select>
-
               <Button className="h-12 w-full" onClick={saveProduct}>
                 Salvar produto
               </Button>
@@ -283,7 +290,10 @@ export default function ValidadeFarmaciaLayout() {
             <CardContent className="p-4 space-y-2">
               <h2 className="font-semibold">Últimos cadastrados</h2>
               {lastFive.map((p) => (
-                <div key={p.id} className="flex justify-between items-center">
+                <div
+                  key={p.id}
+                  className="flex justify-between items-center"
+                >
                   <span>{p.nome}</span>
                   <Button
                     size="sm"
@@ -300,35 +310,73 @@ export default function ValidadeFarmaciaLayout() {
 
         {/* ================= CONTROLE ================= */}
         <TabsContent value="controle" className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Card className={cardClass}>
-              <CardContent>Até 7 dias: {count7}</CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <Card className={`border-l-4 border-red-500 ${cardClass}`}>
+              <CardContent className="flex items-center gap-2">
+                <AlertTriangle className="text-red-500" />
+                Até 7 dias: {count7}
+              </CardContent>
             </Card>
-            <Card className={cardClass}>
-              <CardContent>Até 30 dias: {count30}</CardContent>
+            <Card className={`border-l-4 border-orange-500 ${cardClass}`}>
+              <CardContent className="flex items-center gap-2">
+                <Calendar className="text-orange-500" />
+                Até 30 dias: {count30}
+              </CardContent>
             </Card>
-            <Card className={cardClass}>
-              <CardContent>Pré-vencidos: {count90}</CardContent>
+            <Card className={`border-l-4 border-yellow-500 ${cardClass}`}>
+              <CardContent className="flex items-center gap-2">
+                <Calendar className="text-yellow-500" />
+                Pré-vencidos: {count90}
+              </CardContent>
             </Card>
-            <Card className={cardClass}>
-              <CardContent>OK: {countOk}</CardContent>
+            <Card className={`border-l-4 border-green-500 ${cardClass}`}>
+              <CardContent className="flex items-center gap-2">
+                <CheckCircle2 className="text-green-500" />
+                OK: {countOk}
+              </CardContent>
             </Card>
           </div>
 
           <Card className={cardClass}>
             <CardContent className="space-y-2">
-              {filteredProducts.map((p) => (
-                <div key={p.id} className="flex justify-between">
-                  <span>{p.nome}</span>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeProduct(p.id)}
+              {filteredProducts.map((p) => {
+                const d = diffDays(p.validade);
+                return (
+                  <div
+                    key={p.id}
+                    className={`p-3 rounded flex justify-between items-center ${
+                      d <= 7
+                        ? "bg-red-900/30"
+                        : d <= 30
+                        ? "bg-orange-900/30"
+                        : d <= 90
+                        ? "bg-yellow-900/30"
+                        : "bg-green-900/30"
+                    }`}
                   >
-                    Retirar
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{p.nome}</span>
+                      {d <= 1 && (
+                        <span className="text-xs bg-red-600 text-white px-2 rounded">
+                          URGENTE
+                        </span>
+                      )}
+                      {d > 30 && d <= 90 && (
+                        <span className="text-xs bg-yellow-500 text-black px-2 rounded">
+                          PRÉ-VENCIDO
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => removeProduct(p.id)}
+                    >
+                      Retirar
+                    </Button>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </TabsContent>
