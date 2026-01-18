@@ -261,6 +261,60 @@ export default function ValidadeFarmaciaLayout() {
             </CardContent>
           </Card>
         </TabsContent>
+      
+        {/* CONTROLE */}
+        <TabsContent value="controle" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card className={`${card} border-l-4 border-red-500`}>
+              <CardContent className="p-4 space-y-1">
+                <div className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle size={18} />
+                  <span className="text-sm font-medium">
+                    Vencem em até 7 dias
+                  </span>
+                </div>
+                <p className="text-2xl font-bold">{count7} produtos</p>
+              </CardContent>
+            </Card>
+
+            <Card className={`${card} border-l-4 border-orange-500`}>
+              <CardContent className="p-4 space-y-1">
+                <div className="flex items-center gap-2 text-orange-600">
+                  <Calendar size={18} />
+                  <span className="text-sm font-medium">
+                    Vencem em até 30 dias
+                  </span>
+                </div>
+                <p className="text-2xl font-bold">{count30} produtos</p>
+              </CardContent>
+            </Card>
+
+            <Card className={`${card} border-l-4 border-yellow-500`}>
+              <CardContent className="p-4 space-y-1">
+                <div className="flex items-center gap-2 text-yellow-600">
+                  <Calendar size={18} />
+                  <span className="text-sm font-medium">
+                    Pré-vencidos (até 3 meses)
+                  </span>
+                </div>
+                <p className="text-2xl font-bold">{count90} produtos</p>
+              </CardContent>
+            </Card>
+
+            <Card className={`${card} border-l-4 border-green-500`}>
+              <CardContent className="p-4 space-y-1">
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 size={18} />
+                  <span className="text-sm font-medium">
+                    Dentro da validade
+                  </span>
+                </div>
+                <p className="text-2xl font-bold">{countOk} produtos</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
       </Tabs>
     </div>
   );
