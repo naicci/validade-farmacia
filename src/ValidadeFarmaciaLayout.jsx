@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,8 +39,6 @@ export default function ValidadeFarmaciaLayout() {
   const [darkMode, setDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [local, setLocal] = useState("");
-  const [filterDays, setFilterDays] = useState("todos");
-  const [filterLocal, setFilterLocal] = useState("todos");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState("");
 
@@ -48,7 +46,6 @@ export default function ValidadeFarmaciaLayout() {
   const barcodeRef = useRef(null);
   const nameRef = useRef(null);
   const dateRef = useRef(null);
-  const audioRef = useRef(null);
 
   /* =========================
      Persistência
@@ -67,7 +64,7 @@ export default function ValidadeFarmaciaLayout() {
   }, [products]);
 
   /* =========================
-     Scanner nativo
+     Scanner
   ========================= */
   useEffect(() => {
     if (!scannerOpen) return;
@@ -78,7 +75,7 @@ export default function ValidadeFarmaciaLayout() {
     const start = async () => {
       try {
         if (!isBarcodeDetectorSupported()) {
-          setScannerError("Scanner não suportado neste navegador.");
+          setScannerError("Scanner não suportado.");
           return;
         }
 
@@ -95,10 +92,9 @@ export default function ValidadeFarmaciaLayout() {
         const scan = async () => {
           if (!active) return;
           try {
-            const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length) {
-              barcodeRef.current.value = barcodes[0].rawValue;
-              audioRef.current?.play();
+            const codes = await detector.detect(videoRef.current);
+            if (codes.length) {
+              barcodeRef.current.value = codes[0].rawValue;
               setScannerOpen(false);
             }
           } catch {}
@@ -107,7 +103,7 @@ export default function ValidadeFarmaciaLayout() {
 
         scan();
       } catch {
-        setScannerError("Não foi possível acessar a câmera.");
+        setScannerError("Erro ao acessar câmera.");
       }
     };
 
@@ -139,9 +135,8 @@ export default function ValidadeFarmaciaLayout() {
     setLocal("");
   };
 
-  const removeProduct = (id) => {
+  const removeProduct = (id) =>
     setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
 
   /* =========================
      Cálculos
@@ -159,53 +154,34 @@ export default function ValidadeFarmaciaLayout() {
   ).length;
   const countOk = products.filter((p) => diffDays(p.validade) > 90).length;
 
-  const filteredProducts = products
-    .filter((p) => {
-      const d = diffDays(p.validade);
-      const daysOk =
-        filterDays === "todos"
-          ? true
-          : filterDays === "7"
-          ? d <= 7
-          : filterDays === "30"
-          ? d > 7 && d <= 30
-          : d > 30 && d <= 90;
-
-      const localOk =
-        filterLocal === "todos" ? true : p.local === filterLocal;
-
-      return d >= 0 && daysOk && localOk;
-    })
-    .sort((a, b) => new Date(a.validade) - new Date(b.validade));
-
   const lastFive = products.slice(0, 5);
 
   /* =========================
-     Estilos (restaurados)
+     Estilos base
   ========================= */
-  const containerClass = darkMode
+  const container = darkMode
     ? "bg-gray-900 text-gray-100"
     : "bg-gray-100 text-gray-900";
 
-  const cardClass = darkMode
-    ? "bg-gray-800 border border-gray-700 shadow-lg"
-    : "bg-white border border-gray-200 shadow-lg";
+  const card = darkMode
+    ? "bg-gray-800 border border-gray-700"
+    : "bg-white border border-gray-200";
 
-  const inputClass = darkMode
-    ? "bg-gray-700 text-gray-100 border border-gray-600"
-    : "bg-white text-gray-900 border border-gray-300";
+  const input = darkMode
+    ? "bg-gray-700 text-gray-100"
+    : "bg-white text-gray-900";
 
   /* =========================
      JSX
   ========================= */
   return (
-    <div className={`min-h-screen p-4 ${containerClass}`}>
+    <div className={`min-h-screen p-4 ${container}`}>
       {/* Scanner */}
       {scannerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
           <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-xl">
             <div className="flex justify-between items-center p-4 border-b">
-              <span className="font-semibold">Ler código de barras</span>
+              <span className="font-semibold">Ler código</span>
               <Button variant="ghost" onClick={() => setScannerOpen(false)}>
                 <X />
               </Button>
@@ -213,7 +189,7 @@ export default function ValidadeFarmaciaLayout() {
             <div className="h-[60vh]">
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover bg-black"
+                className="w-full h-full object-cover"
                 muted
                 playsInline
                 autoPlay
@@ -226,52 +202,38 @@ export default function ValidadeFarmaciaLayout() {
         </div>
       )}
 
-      <audio
-        ref={audioRef}
-        src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
-      />
-
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Controle de Validades</h1>
+        <h1 className="text-xl font-bold">Controle de Validades</h1>
         <Button variant="outline" onClick={() => setDarkMode(!darkMode)}>
           {darkMode ? <Sun /> : <Moon />}
         </Button>
       </div>
 
       <Tabs defaultValue="cadastro">
-        <TabsList className="grid grid-cols-2 h-12 mb-4">
+        <TabsList className="grid grid-cols-2 h-11 mb-4">
           <TabsTrigger value="cadastro">Cadastro</TabsTrigger>
           <TabsTrigger value="controle">Controle</TabsTrigger>
         </TabsList>
 
-        {/* ================= CADASTRO ================= */}
+        {/* CADASTRO */}
         <TabsContent value="cadastro" className="space-y-4">
-          <Card className={cardClass}>
+          <Card className={card}>
             <CardContent className="p-4 space-y-3">
-              <div className="flex gap-2 items-center">
-                <Barcode />
+              <div className="flex gap-2">
                 <Input
                   ref={barcodeRef}
-                  placeholder="Código de barras"
-                  className={inputClass}
+                  placeholder="Código"
+                  className={input}
                 />
                 <Button onClick={() => setScannerOpen(true)}>
                   <ScanLine />
                 </Button>
               </div>
-              <Input
-                ref={nameRef}
-                placeholder="Nome do produto"
-                className={inputClass}
-              />
-              <Input
-                ref={dateRef}
-                type="date"
-                className={inputClass}
-              />
+              <Input ref={nameRef} placeholder="Nome" className={input} />
+              <Input ref={dateRef} type="date" className={input} />
               <Select value={local} onValueChange={setLocal}>
-                <SelectTrigger className={inputClass}>
+                <SelectTrigger className={input}>
                   <SelectValue placeholder="Local" />
                 </SelectTrigger>
                 <SelectContent>
@@ -280,19 +242,19 @@ export default function ValidadeFarmaciaLayout() {
                   <SelectItem value="geladeira">Geladeira</SelectItem>
                 </SelectContent>
               </Select>
-              <Button className="h-12 w-full" onClick={saveProduct}>
+              <Button className="h-11 w-full" onClick={saveProduct}>
                 Salvar produto
               </Button>
             </CardContent>
           </Card>
 
-          <Card className={cardClass}>
+          <Card className={card}>
             <CardContent className="p-4 space-y-2">
-              <h2 className="font-semibold">Últimos cadastrados</h2>
+              <h2 className="font-semibold text-sm">Últimos cadastrados</h2>
               {lastFive.map((p) => (
                 <div
                   key={p.id}
-                  className="flex justify-between items-center"
+                  className="flex justify-between items-center text-sm"
                 >
                   <span>{p.nome}</span>
                   <Button
@@ -308,79 +270,52 @@ export default function ValidadeFarmaciaLayout() {
           </Card>
         </TabsContent>
 
-        {/* ================= CONTROLE ================= */}
+        {/* CONTROLE */}
         <TabsContent value="controle" className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Card className={`border-l-4 border-red-500 ${cardClass}`}>
-              <CardContent className="flex items-center gap-2">
-                <AlertTriangle className="text-red-500" />
-                Até 7 dias: {count7}
-              </CardContent>
-            </Card>
-            <Card className={`border-l-4 border-orange-500 ${cardClass}`}>
-              <CardContent className="flex items-center gap-2">
-                <Calendar className="text-orange-500" />
-                Até 30 dias: {count30}
-              </CardContent>
-            </Card>
-            <Card className={`border-l-4 border-yellow-500 ${cardClass}`}>
-              <CardContent className="flex items-center gap-2">
-                <Calendar className="text-yellow-500" />
-                Pré-vencidos: {count90}
-              </CardContent>
-            </Card>
-            <Card className={`border-l-4 border-green-500 ${cardClass}`}>
-              <CardContent className="flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" />
-                OK: {countOk}
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className={cardClass}>
-            <CardContent className="space-y-2">
-              {filteredProducts.map((p) => {
-                const d = diffDays(p.validade);
-                return (
-                  <div
-                    key={p.id}
-                    className={`p-3 rounded flex justify-between items-center ${
-                      d <= 7
-                        ? "bg-red-900/30"
-                        : d <= 30
-                        ? "bg-orange-900/30"
-                        : d <= 90
-                        ? "bg-yellow-900/30"
-                        : "bg-green-900/30"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{p.nome}</span>
-                      {d <= 1 && (
-                        <span className="text-xs bg-red-600 text-white px-2 rounded">
-                          URGENTE
-                        </span>
-                      )}
-                      {d > 30 && d <= 90 && (
-                        <span className="text-xs bg-yellow-500 text-black px-2 rounded">
-                          PRÉ-VENCIDO
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => removeProduct(p.id)}
-                    >
-                      Retirar
-                    </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              {
+                label: "Até 7 dias",
+                value: count7,
+                icon: AlertTriangle,
+                color: "red",
+              },
+              {
+                label: "Até 30 dias",
+                value: count30,
+                icon: Calendar,
+                color: "orange",
+              },
+              {
+                label: "Pré-vencidos",
+                value: count90,
+                icon: Calendar,
+                color: "yellow",
+              },
+              {
+                label: "OK",
+                value: countOk,
+                icon: CheckCircle2,
+                color: "green",
+              },
+            ].map(({ label, value, icon: Icon, color }) => (
+              <Card
+                key={label}
+                className={`border-l-4 border-${color}-500 ${card}`}
+              >
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon className={`text-${color}-500`} size={18} />
+                    <span className="text-sm">{label}</span>
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                  <span className="text-xl font-bold">{value}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
