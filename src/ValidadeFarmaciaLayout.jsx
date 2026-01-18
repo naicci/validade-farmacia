@@ -19,7 +19,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from "@zxing/browser";
 
 export default function ValidadeFarmaciaLayout() {
   const [darkMode, setDarkMode] = useState(false);
@@ -62,19 +62,33 @@ export default function ValidadeFarmaciaLayout() {
 
     const start = async () => {
       try {
-        if (!readerRef.current) readerRef.current = new BrowserMultiFormatReader();
+        if (!readerRef.current) {
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+        ]);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+        readerRef.current = new BrowserMultiFormatReader(hints, {
+          delayBetweenScanAttempts: 100,
+        });
+      }
         const videoEl = videoRef.current;
         if (!videoEl) return;
 
-        await readerRef.current.decodeFromConstraints(
-          {
-            audio: false,
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          },
+        // decodeFromConstraints removed for mobile reliability
+        const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+        const backCamera =
+          devices.find(d =>
+            d.label.toLowerCase().includes("back") ||
+            d.label.toLowerCase().includes("rear")
+          ) || devices[devices.length - 1];
+
+        await readerRef.current.decodeFromVideoDevice(
+          backCamera.deviceId,
           videoEl,
           (result) => {
             if (!active) return;
@@ -84,6 +98,7 @@ export default function ValidadeFarmaciaLayout() {
             if (barcodeRef.current) barcodeRef.current.value = text;
             audioRef.current?.play();
             if (navigator.vibrate) navigator.vibrate(40);
+            readerRef.current.reset();
             setScannerOpen(false);
           }
         );
@@ -243,7 +258,7 @@ export default function ValidadeFarmaciaLayout() {
               <div className="relative overflow-hidden rounded-lg border border-gray-700/40">
                 <video
                   ref={videoRef}
-                  className="w-full h-72 object-cover bg-black"
+                  className="w-full h-full object-cover bg-black"
                   muted
                   playsInline
                   autoPlay
