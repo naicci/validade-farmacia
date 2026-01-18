@@ -1,4 +1,3 @@
-// ⚠️ ARQUIVO INTEIRO – COPIAR E COLAR
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,9 +121,18 @@ export default function ValidadeFarmaciaLayout() {
   ========================= */
   const saveProduct = () => {
     const nome = nameRef.current.value.trim();
-    const validade = dateRef.current.value;
     const codigo = barcodeRef.current.value.trim();
-    if (!nome || !validade) return;
+    const rawDate = dateRef.current.value.trim();
+
+    if (!nome || !rawDate) return;
+
+    // valida dd/mm/aaaa
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) return;
+
+    const [d, m, y] = rawDate.split("/");
+    const validade = new Date(`${y}-${m}-${d}`);
+
+    if (isNaN(validade.getTime())) return;
 
     setProducts((prev) => [
       { id: Date.now(), nome, validade, codigo, local },
@@ -147,7 +155,7 @@ export default function ValidadeFarmaciaLayout() {
   const diffDays = (d) =>
     Math.ceil((new Date(d) - now) / (1000 * 60 * 60 * 24));
 
-  const count7 = products.filter((p) => diffDays(p.validade) <= 7).length;
+  const count7 = products.filter((p) agora => diffDays(p.validade) <= 7).length;
   const count30 = products.filter(
     (p) => diffDays(p.validade) > 7 && diffDays(p.validade) <= 30
   ).length;
@@ -162,9 +170,6 @@ export default function ValidadeFarmaciaLayout() {
   const container = darkMode
     ? "bg-gray-900 text-gray-100"
     : "bg-gray-100 text-gray-900";
-
-  const cardBase =
-    "transition-transform active:scale-[0.97] hover:shadow-lg cursor-pointer";
 
   const card = darkMode
     ? "bg-gray-800 border border-gray-700"
@@ -193,16 +198,12 @@ export default function ValidadeFarmaciaLayout() {
           <TabsTrigger value="controle">Controle</TabsTrigger>
         </TabsList>
 
-        {/* ================= CADASTRO ================= */}
+        {/* CADASTRO */}
         <TabsContent value="cadastro" className="space-y-4">
           <Card className={card}>
             <CardContent className="p-4 space-y-3">
               <div className="flex gap-2">
-                <Input
-                  ref={barcodeRef}
-                  placeholder="Código"
-                  className={input}
-                />
+                <Input ref={barcodeRef} placeholder="Código" className={input} />
                 <Button
                   onClick={() => setScannerOpen(true)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white h-11 px-4 flex gap-2"
@@ -213,7 +214,32 @@ export default function ValidadeFarmaciaLayout() {
               </div>
 
               <Input ref={nameRef} placeholder="Nome" className={input} />
-              <Input ref={dateRef} type="date" className={input} />
+
+              {/* VALIDADE COM TECLADO NUMÉRICO */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-gray-600 dark:text-gray-300">
+                  Validade (dd/mm/aaaa)
+                </label>
+                <Input
+                  ref={dateRef}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="dd/mm/aaaa"
+                  className={input}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, "");
+                    if (v.length > 8) v = v.slice(0, 8);
+                    if (v.length >= 5)
+                      v = v.replace(
+                        /^(\d{2})(\d{2})(\d{1,4}).*/,
+                        "$1/$2/$3"
+                      );
+                    else if (v.length >= 3)
+                      v = v.replace(/^(\d{2})(\d{1,2}).*/, "$1/$2");
+                    e.target.value = v;
+                  }}
+                />
+              </div>
 
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger className={input}>
@@ -228,69 +254,12 @@ export default function ValidadeFarmaciaLayout() {
 
               <Button
                 onClick={saveProduct}
-                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold"
+                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
               >
                 Salvar produto
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* ================= CONTROLE ================= */}
-        <TabsContent value="controle" className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card
-              onClick={() => setFilterDays("7")}
-              className={`${card} ${cardBase} border-l-4 border-red-500`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-red-600">
-                  <AlertTriangle size={18} />
-                  <span>Vencem em até 7 dias</span>
-                </div>
-                <p className="text-2xl font-bold">{count7}</p>
-              </CardContent>
-            </Card>
-
-            <Card
-              onClick={() => setFilterDays("30")}
-              className={`${card} ${cardBase} border-l-4 border-orange-500`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-orange-600">
-                  <Calendar size={18} />
-                  <span>Vencem em até 30 dias</span>
-                </div>
-                <p className="text-2xl font-bold">{count30}</p>
-              </CardContent>
-            </Card>
-
-            <Card
-              onClick={() => setFilterDays("90")}
-              className={`${card} ${cardBase} border-l-4 border-yellow-500`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-yellow-600">
-                  <Calendar size={18} />
-                  <span>Pré-vencidos</span>
-                </div>
-                <p className="text-2xl font-bold">{count90}</p>
-              </CardContent>
-            </Card>
-
-            <Card
-              onClick={() => setFilterDays("todos")}
-              className={`${card} ${cardBase} border-l-4 border-green-500`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 size={18} />
-                  <span>Dentro da validade</span>
-                </div>
-                <p className="text-2xl font-bold">{countOk}</p>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
