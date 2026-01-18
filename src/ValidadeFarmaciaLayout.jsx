@@ -1,3 +1,4 @@
+// ⚠️ ARQUIVO INTEIRO – COPIAR E COLAR
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export default function ValidadeFarmaciaLayout() {
   const [darkMode, setDarkMode] = useState(false);
   const [products, setProducts] = useState([]);
   const [local, setLocal] = useState("");
+  const [filterDays, setFilterDays] = useState("todos");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState("");
 
@@ -154,14 +156,15 @@ export default function ValidadeFarmaciaLayout() {
   ).length;
   const countOk = products.filter((p) => diffDays(p.validade) > 90).length;
 
-  const lastFive = products.slice(0, 5);
-
   /* =========================
      Estilos base
   ========================= */
   const container = darkMode
     ? "bg-gray-900 text-gray-100"
     : "bg-gray-100 text-gray-900";
+
+  const cardBase =
+    "transition-transform active:scale-[0.97] hover:shadow-lg cursor-pointer";
 
   const card = darkMode
     ? "bg-gray-800 border border-gray-700"
@@ -190,7 +193,7 @@ export default function ValidadeFarmaciaLayout() {
           <TabsTrigger value="controle">Controle</TabsTrigger>
         </TabsList>
 
-        {/* CADASTRO */}
+        {/* ================= CADASTRO ================= */}
         <TabsContent value="cadastro" className="space-y-4">
           <Card className={card}>
             <CardContent className="p-4 space-y-3">
@@ -200,12 +203,18 @@ export default function ValidadeFarmaciaLayout() {
                   placeholder="Código"
                   className={input}
                 />
-                <Button onClick={() => setScannerOpen(true)}>
-                  <ScanLine />
+                <Button
+                  onClick={() => setScannerOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-11 px-4 flex gap-2"
+                >
+                  <ScanLine size={18} />
+                  Ler código
                 </Button>
               </div>
+
               <Input ref={nameRef} placeholder="Nome" className={input} />
               <Input ref={dateRef} type="date" className={input} />
+
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger className={input}>
                   <SelectValue placeholder="Local" />
@@ -216,90 +225,69 @@ export default function ValidadeFarmaciaLayout() {
                   <SelectItem value="geladeira">Geladeira</SelectItem>
                 </SelectContent>
               </Select>
-              <Button className="h-11 w-full" onClick={saveProduct}>
+
+              <Button
+                onClick={saveProduct}
+                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold"
+              >
                 Salvar produto
               </Button>
             </CardContent>
           </Card>
-
-          <Card className={card}>
-            <CardContent className="p-4 space-y-2">
-              <h2 className="font-semibold text-sm">Últimos cadastrados</h2>
-              {lastFive.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <span>{p.nome}</span>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeProduct(p.id)}
-                  >
-                    Retirar
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
         </TabsContent>
 
-        {/* CONTROLE */}
+        {/* ================= CONTROLE ================= */}
         <TabsContent value="controle" className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className={`${card} border-l-4 border-red-500`}>
-              <CardContent className="p-4 space-y-1">
+            <Card
+              onClick={() => setFilterDays("7")}
+              className={`${card} ${cardBase} border-l-4 border-red-500`}
+            >
+              <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-red-600">
                   <AlertTriangle size={18} />
-                  <span className="text-sm font-medium">
-                    Vencem em até 7 dias
-                  </span>
+                  <span>Vencem em até 7 dias</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {count7} produtos
-                </p>
+                <p className="text-2xl font-bold">{count7}</p>
               </CardContent>
             </Card>
 
-            <Card className={`${card} border-l-4 border-orange-500`}>
-              <CardContent className="p-4 space-y-1">
+            <Card
+              onClick={() => setFilterDays("30")}
+              className={`${card} ${cardBase} border-l-4 border-orange-500`}
+            >
+              <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-orange-600">
                   <Calendar size={18} />
-                  <span className="text-sm font-medium">
-                    Vencem em até 30 dias
-                  </span>
+                  <span>Vencem em até 30 dias</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {count30} produtos
-                </p>
+                <p className="text-2xl font-bold">{count30}</p>
               </CardContent>
             </Card>
 
-            <Card className={`${card} border-l-4 border-yellow-500`}>
-              <CardContent className="p-4 space-y-1">
+            <Card
+              onClick={() => setFilterDays("90")}
+              className={`${card} ${cardBase} border-l-4 border-yellow-500`}
+            >
+              <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-yellow-600">
                   <Calendar size={18} />
-                  <span className="text-sm font-medium">
-                    Pré-vencidos (até 3 meses)
-                  </span>
+                  <span>Pré-vencidos</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {count90} produtos
-                </p>
+                <p className="text-2xl font-bold">{count90}</p>
               </CardContent>
             </Card>
 
-            <Card className={`${card} border-l-4 border-green-500`}>
-              <CardContent className="p-4 space-y-1">
+            <Card
+              onClick={() => setFilterDays("todos")}
+              className={`${card} ${cardBase} border-l-4 border-green-500`}
+            >
+              <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle2 size={18} />
-                  <span className="text-sm font-medium">
-                    Dentro da validade
-                  </span>
+                  <span>Dentro da validade</span>
                 </div>
-                <p className="text-2xl font-bold">
-                  {countOk} produtos
-                </p>
+                <p className="text-2xl font-bold">{countOk}</p>
               </CardContent>
             </Card>
           </div>
