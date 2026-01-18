@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle,
   Barcode,
@@ -111,142 +110,12 @@ export default function ValidadeFarmaciaLayout() {
 
     start();
 
-    return () => {
-      active = false;
-      const videoEl = videoRef.current;
-      if (videoEl && videoEl.srcObject) {
-        try {
-          // @ts-ignore
-          videoEl.srcObject.getTracks().forEach(t => t.stop());
-        } catch {}
-        // @ts-ignore
-        videoEl.srcObject = null;
-      }
-    };
-  }, [scannerOpen]);
-
-
-  const containerClass = darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900";
-
-  const cardClass = darkMode
-    ? "bg-gray-800 border border-gray-700 text-gray-100 shadow-lg"
-    : "bg-white border border-gray-200 text-gray-900 shadow-lg";
-
-  const inputClass = darkMode
-    ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600 focus:border-emerald-400"
-    : "bg-white text-gray-900 placeholder-gray-500 border border-gray-300 focus:border-emerald-500";
-
-  const subtleText = darkMode ? "text-gray-200" : "text-gray-700";
-  const mutedText = darkMode ? "text-gray-300" : "text-gray-600";
-
-  const selectContentClass = useMemo(() => {
-    return `z-[9999] ${
-      darkMode
-        ? "bg-gray-800 text-gray-100 border border-gray-700"
-        : "bg-white text-gray-900 border border-gray-200"
-    }`;
-  }, [darkMode]);
-
-  const now = useMemo(() => new Date(), [products.length]);
-
-  const removeProduct = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    setConfirmRemoveId(null);
-  };
-
-  const saveProduct = () => {
-    if (saving) return;
-
-    const codigo = barcodeRef.current?.value?.trim() || "";
-    const nome = nameRef.current?.value?.trim() || "";
-    const validade = dateRef.current?.value || "";
-
-    if (!nome || !validade) return;
-
-    setSaving(true);
-    setSaved(false);
-
-    const newProduct = {
-      id: Date.now(),
-      codigo,
-      nome,
-      validade,
-      local,
-    };
-
-    setTimeout(() => {
-      setProducts((prev) => [newProduct, ...prev]);
-      setSaving(false);
-      setSaved(true);
-      audioRef.current?.play();
-      if (navigator.vibrate) navigator.vibrate(80);
-
-      if (barcodeRef.current) barcodeRef.current.value = "";
-      if (nameRef.current) nameRef.current.value = "";
-      if (dateRef.current) dateRef.current.value = "";
-      setLocal("");
-
-      setTimeout(() => setSaved(false), 2000);
-    }, 800);
-  };
-
-  const count7 = useMemo(() => {
-    return products.filter((p) => {
-      const diff = (new Date(p.validade) - now) / (1000 * 60 * 60 * 24);
-      return diff >= 0 && diff <= 7;
-    }).length;
-  }, [products, now]);
-
-  const count30 = useMemo(() => {
-    return products.filter((p) => {
-      const diff = (new Date(p.validade) - now) / (1000 * 60 * 60 * 24);
-      return diff > 7 && diff <= 30;
-    }).length;
-  }, [products, now]);
-
-  const count90 = useMemo(() => {
-    return products.filter((p) => {
-      const diff = (new Date(p.validade) - now) / (1000 * 60 * 60 * 24);
-      return diff > 30 && diff <= 90;
-    }).length;
-  }, [products, now]);
-
-  const countOk = useMemo(() => {
-    return products.filter((p) => {
-      const diff = (new Date(p.validade) - now) / (1000 * 60 * 60 * 24);
-      return diff > 90;
-    }).length;
-  }, [products, now]);
-
-    const lastFiveProducts = useMemo(() => products.slice(0, 5), [products]);
-
-const filteredProducts = useMemo(() => {
-    return products
-      .filter((p) => {
-        const diff = Math.ceil((new Date(p.validade) - now) / (1000 * 60 * 60 * 24));
-
-        const daysOk =
-          filterDays === "todos"
-            ? true
-            : filterDays === "7"
-              ? diff <= 7
-              : filterDays === "30"
-                ? diff > 7 && diff <= 30
-                : diff > 30 && diff <= 90;
-
-        const localOk = filterLocal === "todos" ? true : (p.local || "") === filterLocal;
-
-        return diff >= 0 && daysOk && localOk;
-      })
-      .sort((a, b) => new Date(a.validade) - new Date(b.validade));
-  }, [products, now, filterDays, filterLocal]);
-
-  return (
+    return (
     <div className={`min-h-screen w-full px-4 py-6 md:p-6 ${containerClass}`}>
       {scannerOpen && (
-        <div className="fixed inset-0 z-50 bg-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div
-            className={`w-full h-full ${
+            className={`w-full max-w-md rounded-xl ${
               darkMode ? "bg-gray-900 text-gray-100" : "bg-white text-gray-900"
             } shadow-2xl border ${darkMode ? "border-gray-700" : "border-gray-200"}`}
           >
@@ -259,14 +128,13 @@ const filteredProducts = useMemo(() => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setScannerOpen(false)}
-                className={darkMode ? "text-gray-100" : "text-gray-900"}
               >
                 <X className="w-5 h-5" />
               </Button>
             </div>
 
             <div className="p-4">
-              <div className="relative overflow-hidden rounded-lg border border-gray-700/40">
+              <div className="relative overflow-hidden rounded-lg border border-gray-700/40 h-[60vh]">
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover bg-black"
@@ -279,10 +147,12 @@ const filteredProducts = useMemo(() => {
                 </div>
               </div>
 
-              {scannerError && <div className="mt-3 text-sm text-red-400">{scannerError}</div>}
+              {scannerError && (
+                <div className="mt-3 text-sm text-red-400">{scannerError}</div>
+              )}
 
               <div className={`mt-4 text-xs ${mutedText}`}>
-                Aponte a câmera para o código de barras. Ao reconhecer, ele será preenchido automaticamente.
+                Aponte a câmera para o código de barras.
               </div>
             </div>
           </div>
@@ -295,283 +165,106 @@ const filteredProducts = useMemo(() => {
         preload="auto"
       />
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Controle de Validades</h1>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setDarkMode((v) => !v)}
-          className={
-            darkMode
-              ? "bg-gray-800 border border-gray-700 text-gray-100 shadow-lg hover:bg-gray-700 transition-all duration-300 hover:shadow-emerald-500/20"
-              : "bg-white border border-gray-300 text-gray-800 shadow-lg hover:bg-gray-200 transition-all duration-300 hover:shadow-emerald-400/30"
-          }
-        >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <Button variant="outline" size="icon" onClick={() => setDarkMode(v => !v)}>
+          {darkMode ? <Sun /> : <Moon />}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:gap-4 mb-6">
-        <Card className={`border-l-4 border-red-500 ${cardClass}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-red-400 font-semibold">
-              <AlertTriangle size={20} />
-              Vencem em até 7 dias
-            </div>
-            <p className="text-2xl mt-2">{count7} produtos</p>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="cadastro">
+        <TabsList className="grid grid-cols-2 h-12 mb-4">
+          <TabsTrigger value="cadastro">Cadastro</TabsTrigger>
+          <TabsTrigger value="controle">Controle</TabsTrigger>
+        </TabsList>
 
-
-          {/* ÚLTIMOS 5 PRODUTOS */}
+        <TabsContent value="cadastro" className="space-y-4">
+          {/* Cadastro rápido */}
           <Card className={cardClass}>
-            <CardContent className="p-4">
-              <h2 className={`text-lg font-semibold mb-3 ${subtleText}`}>Últimos cadastrados</h2>
-              <div className="space-y-2">
-                {lastFiveProducts.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between p-2 rounded bg-black/5">
-                    <span className="text-sm font-medium">{p.nome}</span>
-                    <Button size="sm" className="h-10 px-4" variant="destructive"
-                      onClick={() => setConfirmRemoveId(p.id)}>
-                      Retirar
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-        </TabsContent>
-
-        <TabsContent value="controle" className="space-y-4">
-        <Card className={`border-l-4 border-orange-500 ${cardClass}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-orange-400 font-semibold">
-              <Calendar size={20} />
-              Vencem em até 30 dias
-            </div>
-            <p className="text-2xl mt-2">{count30} produtos</p>
-          </CardContent>
-        </Card>
-
-        <Card className={`border-l-4 border-yellow-500 ${cardClass}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-yellow-400 font-semibold">
-              <Calendar size={20} />
-              Pré-vencidos (até 3 meses)
-            </div>
-            <p className="text-2xl mt-2">{count90} produtos</p>
-          </CardContent>
-        </Card>
-
-        <Card className={`border-l-4 border-green-500 ${cardClass}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-green-400 font-semibold">
-              <CheckCircle2 size={20} />
-              Dentro da validade
-            </div>
-            <p className="text-2xl mt-2">{countOk} produtos</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className={`mb-6 ${cardClass}`}>
-        <CardContent className="p-4">
-          <h2 className={`text-lg font-semibold mb-4 ${subtleText}`}>Cadastro rápido</h2>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-5 md:gap-4">
-            <div className="flex flex-col gap-1">
-              <span className={`text-sm ${mutedText}`}>Código de barras</span>
-              <div className="flex items-center gap-2">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex gap-2 items-center">
                 <Barcode />
-                <Input
-                  ref={barcodeRef}
-                  className={inputClass}
-                  placeholder="Código de barras"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  onFocus={() => setScannerOpen(true)}
-                />              </div>
-            </div>
+                <Input ref={barcodeRef} placeholder="Código de barras" className={inputClass} />
+                <Button onClick={() => setScannerOpen(true)} className="h-12 px-4">
+                  <ScanLine />
+                </Button>
+              </div>
 
-            <div className="flex flex-col gap-1">
-              <span className={`text-sm ${mutedText}`}>Nome do produto</span>
-              <Input ref={nameRef} className={inputClass} placeholder="Nome do produto" />
-            </div>
+              <Input ref={nameRef} placeholder="Nome do produto" className={inputClass} />
+              <Input ref={dateRef} type="date" className={inputClass} />
 
-            <div className="flex flex-col gap-1">
-              <span className={`text-sm ${mutedText}`}>Validade</span>
-              <Input ref={dateRef} className={inputClass} type="date" />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className={`text-sm ${mutedText}`}>Local</span>
               <Select value={local} onValueChange={setLocal}>
                 <SelectTrigger className={inputClass}>
                   <SelectValue placeholder="Local" />
                 </SelectTrigger>
-                <SelectContent className={selectContentClass}>
+                <SelectContent>
                   <SelectItem value="balcao">Balcão</SelectItem>
                   <SelectItem value="estoque">Estoque</SelectItem>
                   <SelectItem value="geladeira">Geladeira</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
 
-            <Button
-              onClick={saveProduct}
-              disabled={saving}
-              className={`w-full h-12 text-base font-semibold shadow-lg hover:shadow-emerald-500/40 transition-all duration-300 ${
-                saving ? "bg-emerald-400" : saved ? "bg-green-600" : "bg-emerald-600 hover:bg-emerald-700"
-              } text-white`}
-            >
-              {saving ? "Salvando..." : saved ? "Produto salvo ✓" : "Salvar produto"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <Button onClick={saveProduct} className="w-full h-12">
+                Salvar produto
+              </Button>
+            </CardContent>
+          </Card>
 
-      <Card className={`mb-6 ${cardClass}`}>
-        <CardContent className="p-4">
-          <h2 className={`text-lg font-semibold mb-4 ${subtleText}`}>Filtros</h2>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-            <Select value={filterDays} onValueChange={setFilterDays}>
-              <SelectTrigger className={inputClass}>
-                <SelectValue placeholder="Filtrar por vencimento" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClass}>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="7">Vencem em até 7 dias</SelectItem>
-                <SelectItem value="30">Vencem em até 30 dias</SelectItem>
-                <SelectItem value="90">Pré-vencidos (até 3 meses)</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterLocal} onValueChange={setFilterLocal}>
-              <SelectTrigger className={inputClass}>
-                <SelectValue placeholder="Filtrar por local" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClass}>
-                <SelectItem value="todos">Todos os locais</SelectItem>
-                <SelectItem value="balcao">Balcão</SelectItem>
-                <SelectItem value="estoque">Estoque</SelectItem>
-                <SelectItem value="geladeira">Geladeira</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              type="button"
-              variant="outline"
-              className={`${inputClass} font-semibold`}
-              onClick={() => {
-                setFilterDays("todos");
-                setFilterLocal("todos");
-              }}
-            >
-              Limpar filtros
-            </Button>
-          </div>
-
-          <p className={`mt-4 text-sm ${mutedText}`}>Mostrando {filteredProducts.length} produto(s)</p>
-        </CardContent>
-      </Card>
-
-      <Card className={cardClass}>
-        <CardContent className="p-4">
-          <h2 className={`text-lg font-semibold mb-4 ${subtleText}`}>Próximos a vencer</h2>
-
-          <div className="space-y-2">
-            {filteredProducts.map((p) => {
-              const diff = Math.ceil((new Date(p.validade) - now) / (1000 * 60 * 60 * 24));
-              const isUrgent = diff <= 1;
-              const isPreVencido = diff > 30 && diff <= 90;
-
-              return (
-                <div
-                  key={p.id}
-                  className={`flex flex-col md:flex-row md:justify-between md:items-center gap-2 p-3 rounded ${
-                    diff <= 7
-                      ? "bg-red-900/40"
-                      : diff <= 30
-                        ? "bg-orange-900/35"
-                        : diff <= 90
-                          ? "bg-yellow-900/35"
-                          : "bg-green-900/30"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{p.nome}</span>
-
-                    {isUrgent && (
-                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-red-600 text-white">
-                        URGENTE
-                      </span>
-                    )}
-
-                    {!isUrgent && isPreVencido && (
-                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-yellow-500 text-gray-900">
-                        PRÉ-VENCIDO
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between md:justify-end gap-3">
-                    <span className={`font-semibold ${darkMode ? "text-gray-100" : "text-gray-900"}`}>
-                      Vence em {diff} dias
-                    </span>
-
-                    {confirmRemoveId === p.id ? (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeProduct(p.id)}
-                          className="shadow-md hover:shadow-red-500/40 transition-all duration-300"
-                        >
-                          Confirmar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setConfirmRemoveId(null)}
-                          className={inputClass}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setConfirmRemoveId((prev) => (prev === p.id ? null : p.id))}
-                        className="shadow-md hover:shadow-red-500/40 transition-all duration-300"
-                      >
-                        Retirar
-                      </Button>
-                    )}
-                  </div>
+          {/* Últimos 5 */}
+          <Card className={cardClass}>
+            <CardContent className="p-4 space-y-2">
+              <h2 className="font-semibold">Últimos cadastrados</h2>
+              {lastFiveProducts.map(p => (
+                <div key={p.id} className="flex justify-between items-center">
+                  <span>{p.nome}</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setConfirmRemoveId(p.id)}
+                  >
+                    Retirar
+                  </Button>
                 </div>
-              );
-            })}
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="controle" className="space-y-4">
+          {/* Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card className={`border-l-4 border-red-500 ${cardClass}`}>
+              <CardContent className="p-3">Vencem em 7: {count7}</CardContent>
+            </Card>
+            <Card className={`border-l-4 border-orange-500 ${cardClass}`}>
+              <CardContent className="p-3">Vencem em 30: {count30}</CardContent>
+            </Card>
+            <Card className={`border-l-4 border-yellow-500 ${cardClass}`}>
+              <CardContent className="p-3">Pré-vencidos: {count90}</CardContent>
+            </Card>
+            <Card className={`border-l-4 border-green-500 ${cardClass}`}>
+              <CardContent className="p-3">OK: {countOk}</CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Lista completa */}
+          <Card className={cardClass}>
+            <CardContent className="p-4 space-y-2">
+              {filteredProducts.map(p => (
+                <div key={p.id} className="flex justify-between">
+                  <span>{p.nome}</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setConfirmRemoveId(p.id)}
+                  >
+                    Retirar
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
-}
-// --- Native BarcodeDetector (primary) ---
-const isBarcodeDetectorSupported = () => {
-  return typeof window !== "undefined" && "BarcodeDetector" in window;
-};
-
-const createBarcodeDetector = () => {
-  // Prioritize pharmacy formats
-  // @ts-ignore
-  return new window.BarcodeDetector({
-    formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
-  });
-};
-
