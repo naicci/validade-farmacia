@@ -19,8 +19,6 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from "@zxing/browser";
-
 export default function ValidadeFarmaciaLayout() {
   const [darkMode, setDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,6 +52,7 @@ export default function ValidadeFarmaciaLayout() {
     localStorage.setItem("produtos-validade", JSON.stringify(products));
   }, [products]);
 
+  
   useEffect(() => {
     if (!scannerOpen) return;
 
@@ -62,47 +61,49 @@ export default function ValidadeFarmaciaLayout() {
 
     const start = async () => {
       try {
-        if (!readerRef.current) {
-        const hints = new Map();
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-          BarcodeFormat.EAN_13,
-          BarcodeFormat.EAN_8,
-          BarcodeFormat.UPC_A,
-          BarcodeFormat.UPC_E,
-          BarcodeFormat.CODE_128,
-        ]);
-        hints.set(DecodeHintType.TRY_HARDER, true);
-        readerRef.current = new BrowserMultiFormatReader(hints, {
-          delayBetweenScanAttempts: 100,
-        });
-      }
         const videoEl = videoRef.current;
         if (!videoEl) return;
 
-        // decodeFromConstraints removed for mobile reliability
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-        const backCamera =
-          devices.find(d =>
-            d.label.toLowerCase().includes("back") ||
-            d.label.toLowerCase().includes("rear")
-          ) || devices[devices.length - 1];
+        // Request camera (environment)
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
 
-        await readerRef.current.decodeFromVideoDevice(
-          backCamera.deviceId,
-          videoEl,
-          (result) => {
-            if (!active) return;
-            if (!result) return;
+        videoEl.srcObject = stream;
+        await videoEl.play();
 
-            const text = result.getText?.() ?? String(result);
-            if (barcodeRef.current) barcodeRef.current.value = text;
-            audioRef.current?.play();
-            if (navigator.vibrate) navigator.vibrate(40);
-            readerRef.current.reset();
-            setScannerOpen(false);
+        if (!isBarcodeDetectorSupported()) {
+          setScannerError("Scanner não suportado neste navegador.");
+          return;
+        }
+
+        const detector = createBarcodeDetector();
+
+        const scanLoop = async () => {
+          if (!active) return;
+          try {
+            const barcodes = await detector.detect(videoEl);
+            if (barcodes && barcodes.length) {
+              const value = barcodes[0].rawValue;
+              if (barcodeRef.current) barcodeRef.current.value = value;
+              audioRef.current?.play();
+              if (navigator.vibrate) navigator.vibrate(40);
+
+              // stop stream
+              stream.getTracks().forEach(t => t.stop());
+              setScannerOpen(false);
+              return;
+            }
+          } catch (err) {
+            // ignore single-frame errors
           }
-        );
-      } catch {
+          requestAnimationFrame(scanLoop);
+        };
+
+        scanLoop();
+      } catch (err) {
+        console.error(err);
         setScannerError("Não foi possível acessar a câmera. Verifique as permissões.");
       }
     };
@@ -111,11 +112,18 @@ export default function ValidadeFarmaciaLayout() {
 
     return () => {
       active = false;
-      try {
-        readerRef.current?.reset();
-      } catch {}
+      const videoEl = videoRef.current;
+      if (videoEl && videoEl.srcObject) {
+        try {
+          // @ts-ignore
+          videoEl.srcObject.getTracks().forEach(t => t.stop());
+        } catch {}
+        // @ts-ignore
+        videoEl.srcObject = null;
+      }
     };
   }, [scannerOpen]);
+
 
   const containerClass = darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900";
 
@@ -527,3 +535,16 @@ export default function ValidadeFarmaciaLayout() {
     </div>
   );
 }
+// --- Native BarcodeDetector (primary) ---
+const isBarcodeDetectorSupported = () => {
+  return typeof window !== "undefined" && "BarcodeDetector" in window;
+};
+
+const createBarcodeDetector = () => {
+  // Prioritize pharmacy formats
+  // @ts-ignore
+  return new window.BarcodeDetector({
+    formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
+  });
+};
+
