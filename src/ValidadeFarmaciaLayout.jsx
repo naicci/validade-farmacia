@@ -155,7 +155,7 @@ export default function ValidadeFarmaciaLayout() {
   const diffDays = (d) =>
     Math.ceil((new Date(d) - now) / (1000 * 60 * 60 * 24));
 
-  const count7 = products.filter((p) agora => diffDays(p.validade) <= 7).length;
+  const count7 = products.filter((p) => diffDays(p.validade) <= 7).length;
   const count30 = products.filter(
     (p) => diffDays(p.validade) > 7 && diffDays(p.validade) <= 30
   ).length;
