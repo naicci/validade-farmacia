@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle,
   Barcode,
@@ -217,7 +218,9 @@ export default function ValidadeFarmaciaLayout() {
     }).length;
   }, [products, now]);
 
-  const filteredProducts = useMemo(() => {
+    const lastFiveProducts = useMemo(() => products.slice(0, 5), [products]);
+
+const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
         const diff = Math.ceil((new Date(p.validade) - now) / (1000 * 60 * 60 * 24));
@@ -319,6 +322,28 @@ export default function ValidadeFarmaciaLayout() {
           </CardContent>
         </Card>
 
+
+          {/* ÚLTIMOS 5 PRODUTOS */}
+          <Card className={cardClass}>
+            <CardContent className="p-4">
+              <h2 className={`text-lg font-semibold mb-3 ${subtleText}`}>Últimos cadastrados</h2>
+              <div className="space-y-2">
+                {lastFiveProducts.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-2 rounded bg-black/5">
+                    <span className="text-sm font-medium">{p.nome}</span>
+                    <Button size="sm" className="h-10 px-4" variant="destructive"
+                      onClick={() => setConfirmRemoveId(p.id)}>
+                      Retirar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+        </TabsContent>
+
+        <TabsContent value="controle" className="space-y-4">
         <Card className={`border-l-4 border-orange-500 ${cardClass}`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-orange-400 font-semibold">
@@ -396,7 +421,7 @@ export default function ValidadeFarmaciaLayout() {
             <Button
               onClick={saveProduct}
               disabled={saving}
-              className={`w-full font-semibold shadow-lg hover:shadow-emerald-500/40 transition-all duration-300 ${
+              className={`w-full h-12 text-base font-semibold shadow-lg hover:shadow-emerald-500/40 transition-all duration-300 ${
                 saving ? "bg-emerald-400" : saved ? "bg-green-600" : "bg-emerald-600 hover:bg-emerald-700"
               } text-white`}
             >
@@ -532,6 +557,8 @@ export default function ValidadeFarmaciaLayout() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
